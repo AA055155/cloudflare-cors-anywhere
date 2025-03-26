@@ -15,8 +15,8 @@ The main goal is to facilitate cross-origin requests while enforcing specific se
 
 // Configuration: Whitelist and Blacklist (not used in this version)
 // whitelist = [ "^http.?://www.zibri.org$", "zibri.org$", "test\\..*" ];  // regexp for whitelisted urls
-const blacklistUrls = [];           // regexp for blacklisted urls
-const whitelistOrigins = [ ".*" ];   // regexp for whitelisted origins
+let blacklistUrls = [];           // regexp for blacklisted urls
+let whitelistOrigins = [ ".*" ];   // regexp for whitelisted origins
 
 // Function to check if a given URI or origin is listed in the whitelist or blacklist
 function isListedInWhitelist(uri, listing) {
@@ -37,16 +37,16 @@ function isListedInWhitelist(uri, listing) {
 // Event listener for incoming fetch requests
 addEventListener("fetch", async event => {
     event.respondWith((async function() {
-        const isPreflightRequest = (event.request.method === "OPTIONS");
+        let isPreflightRequest = (event.request.method === "OPTIONS");
         
-        const originUrl = new URL(event.request.url);
+        let originUrl = new URL(event.request.url);
 
         // Function to modify headers to enable CORS
         function setupCORSHeaders(headers) {
             headers.set("Access-Control-Allow-Origin", event.request.headers.get("Origin"));
             if (isPreflightRequest) {
                 headers.set("Access-Control-Allow-Methods", event.request.headers.get("access-control-request-method"));
-                const requestedHeaders = event.request.headers.get("access-control-request-headers");
+                let requestedHeaders = event.request.headers.get("access-control-request-headers");
 
                 if (requestedHeaders) {
                     headers.set("Access-Control-Allow-Headers", requestedHeaders);
@@ -57,10 +57,10 @@ addEventListener("fetch", async event => {
             return headers;
         }
 
-        const targetUrl = decodeURIComponent(decodeURIComponent(originUrl.search.substr(1)));
+        let targetUrl = decodeURIComponent(decodeURIComponent(originUrl.search.substr(1)));
 
-        const originHeader = event.request.headers.get("Origin");
-        const connectingIp = event.request.headers.get("CF-Connecting-IP");
+        let originHeader = event.request.headers.get("Origin");
+        let connectingIp = event.request.headers.get("CF-Connecting-IP");
 
         if ((!isListedInWhitelist(targetUrl, blacklistUrls)) && (isListedInWhitelist(originHeader, whitelistOrigins))) {
             let customHeaders = event.request.headers.get("x-cors-headers");
@@ -72,8 +72,8 @@ addEventListener("fetch", async event => {
             }
 
             if (originUrl.search.startsWith("?")) {
-                const filteredHeaders = {};
-                for (const [key, value] of event.request.headers.entries()) {
+                let filteredHeaders = {};
+                for (let [key, value] of event.request.headers.entries()) {
                     if (
                         (key.match("^origin") === null) &&
                         (key.match("eferer") === null) &&
@@ -89,16 +89,16 @@ addEventListener("fetch", async event => {
                     Object.entries(customHeaders).forEach((entry) => (filteredHeaders[entry[0]] = entry[1]));
                 }
 
-                const newRequest = new Request(event.request, {
+                let newRequest = new Request(event.request, {
                     redirect: "follow",
                     headers: filteredHeaders
                 });
 
-                const response = await fetch(targetUrl, newRequest);
-                const responseHeaders = new Headers(response.headers);
-                const exposedHeaders = [];
-                const allResponseHeaders = {};
-                for (const [key, value] of response.headers.entries()) {
+                let response = await fetch(targetUrl, newRequest);
+                let responseHeaders = new Headers(response.headers);
+                let exposedHeaders = [];
+                let allResponseHeaders = {};
+                for (let [key, value] of response.headers.entries()) {
                     exposedHeaders.push(key);
                     allResponseHeaders[key] = value;
                 }
@@ -108,9 +108,9 @@ addEventListener("fetch", async event => {
                 responseHeaders.set("Access-Control-Expose-Headers", exposedHeaders.join(","));
                 responseHeaders.set("cors-received-headers", JSON.stringify(allResponseHeaders));
 
-                const responseBody = isPreflightRequest ? null : await response.arrayBuffer();
+                let responseBody = isPreflightRequest ? null : await response.arrayBuffer();
 
-                const responseInit = {
+                let responseInit = {
                     headers: responseHeaders,
                     status: isPreflightRequest ? 200 : response.status,
                     statusText: isPreflightRequest ? "OK" : response.statusText
@@ -118,7 +118,7 @@ addEventListener("fetch", async event => {
                 return new Response(responseBody, responseInit);
 
             } else {
-                const responseHeaders = new Headers();
+                let responseHeaders = new Headers();
                 responseHeaders = setupCORSHeaders(responseHeaders);
 
                 let country = false;
